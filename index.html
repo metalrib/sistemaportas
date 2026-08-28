@@ -2,203 +2,239 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Produção - Montagem de Portas</title>
-  <!-- Tailwind CSS via CDN -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Controle de Montagem de Portas</title>
+  
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Phosphor Icons para ícones modernos -->
+  <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Supabase JS SDK CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
+    /* Otimizações Mobile / Android */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { 
       -webkit-appearance: none; 
       margin: 0; 
     }
+    /* Previne zoom acidental no iOS/Android ao focar em inputs */
+    input, select, button {
+      font-size: 16px !important;
+    }
+    .status-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen pb-12">
+<body class="bg-slate-100 text-slate-800 min-h-screen pb-24 lg:pb-12 antialiased select-none">
 
-  <!-- Cabeçalho -->
-  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
-      <div class="flex items-center gap-3">
-        <i class="ph ph-door text-3xl text-indigo-400"></i>
+  <!-- TOPO / CABEÇALHO RESPONSIVO -->
+  <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-inner">
+          <i class="ph ph-door text-2xl"></i>
+        </div>
         <div>
-          <h1 class="text-xl font-bold leading-tight">Montagem de Portas Padrão</h1>
-          <p class="text-xs text-slate-400">Painel de Acompanhamento Diário & Mensal</p>
+          <h1 class="text-base sm:text-lg font-bold leading-tight">Montagem de Portas</h1>
+          <!-- Indicador de Status Nuvem / Local -->
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span id="cloudStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span id="cloudStatusText" class="text-[11px] text-slate-300 font-medium">Modo Offline (Local)</span>
+          </div>
         </div>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <!-- Exportar CSV -->
-        <button onclick="exportarCSV()" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shadow">
-          <i class="ph ph-microsoft-excel-logo text-base"></i> Exportar CSV
-        </button>
 
-        <!-- Exportar Backup JSON -->
-        <button onclick="exportarJSON()" class="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shadow" title="Baixar arquivo de backup com todos os dados">
-          <i class="ph ph-download-simple text-base"></i> Backup JSON
-        </button>
-
-        <!-- Importar Backup JSON -->
-        <label class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shadow cursor-pointer" title="Restaurar backup a partir de um arquivo JSON">
-          <i class="ph ph-upload-simple text-base"></i> Restaurar JSON
-          <input type="file" id="inputImportarJSON" accept=".json" class="hidden" onchange="importarJSON(event)">
-        </label>
-
-        <!-- Limpar Dados -->
-        <button onclick="limparTudo()" class="flex items-center gap-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-xs font-semibold px-3 py-2 rounded-lg transition border border-rose-500/30 ml-1">
-          <i class="ph ph-trash text-base"></i> Limpar Dados
-        </button>
-      </div>
+      <!-- Botão de Configuração da Nuvem -->
+      <button onclick="abrirModalConfig()" class="p-2 sm:px-3 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95">
+        <i class="ph ph-cloud-arrow-up text-lg text-indigo-400"></i>
+        <span class="hidden sm:inline">Configurar Nuvem</span>
+      </button>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <!-- ABAS MOBILE (Fácil navegação com polegar no Android) -->
+  <div class="lg:hidden bg-white border-b border-slate-200 sticky top-[61px] z-30 flex">
+    <button onclick="alternarAba('apontamento')" id="tabBtnApontamento" class="flex-1 py-3 text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 flex justify-center items-center gap-1.5">
+      <i class="ph ph-plus-circle text-base"></i> Apontar
+    </button>
+    <button onclick="alternarAba('dia')" id="tabBtnDia" class="flex-1 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 flex justify-center items-center gap-1.5">
+      <i class="ph ph-calendar-check text-base"></i> Dia
+    </button>
+    <button onclick="alternarAba('mes')" id="tabBtnMes" class="flex-1 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 flex justify-center items-center gap-1.5">
+      <i class="ph ph-chart-bar text-base"></i> Mês
+    </button>
+    <button onclick="alternarAba('historico')" id="tabBtnHistorico" class="flex-1 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 flex justify-center items-center gap-1.5">
+      <i class="ph ph-clock-counter-clockwise text-base"></i> Lista
+    </button>
+  </div>
 
-    <!-- FORMULÁRIO DE LANÇAMENTO (4 colunas) -->
-    <section class="lg:col-span-4 space-y-6">
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <i class="ph ph-plus-circle text-indigo-600 text-xl"></i> Novo Apontamento
-        </h2>
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="max-w-7xl mx-auto px-3 sm:px-4 mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- SEÇÃO FORMULÁRIO (COLUNA ESQUERDA) -->
+    <section id="secaoApontamento" class="lg:col-span-4 space-y-4">
+      <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+            <i class="ph ph-plus-circle text-indigo-600 text-xl"></i> Novo Apontamento
+          </h2>
+          <!-- Botão Sincronizar Manual -->
+          <button onclick="sincronizar()" class="text-xs text-indigo-600 font-semibold flex items-center gap-1 bg-indigo-50 px-2.5 py-1 rounded-lg hover:bg-indigo-100 active:scale-95">
+            <i class="ph ph-arrows-clockwise text-sm" id="syncIcon"></i> Sincronizar
+          </button>
+        </div>
 
         <form id="formProducao" class="space-y-4">
           <!-- Colaborador -->
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Colaborador</label>
-            <select id="colaborador" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="" disabled selected>Selecione quem montou...</option>
-              <option value="Lucas">Lucas</option>
-              <option value="Vinicius">Vinicius</option>
-              <option value="Gustavo">Gustavo</option>
-              <option value="Nalysson">Nalysson</option>
-            </select>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Colaborador</label>
+            <div class="grid grid-cols-2 gap-2" id="gridColaboradores">
+              <!-- Botões rápidos de seleção para Mobile -->
+              <button type="button" onclick="selecionarColaborador('Lucas')" class="btn-colab p-3 text-sm font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-center active:scale-95 transition">Lucas</button>
+              <button type="button" onclick="selecionarColaborador('Vinicius')" class="btn-colab p-3 text-sm font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-center active:scale-95 transition">Vinicius</button>
+              <button type="button" onclick="selecionarColaborador('Gustavo')" class="btn-colab p-3 text-sm font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-center active:scale-95 transition">Gustavo</button>
+              <button type="button" onclick="selecionarColaborador('Nalysson')" class="btn-colab p-3 text-sm font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-center active:scale-95 transition">Nalysson</button>
+            </div>
+            <input type="hidden" id="colaborador" required>
           </div>
 
-          <!-- Ordem de Produção com Trava/Fixar -->
+          <!-- OP com Trava -->
           <div>
             <div class="flex justify-between items-center mb-1">
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600">Ordem de Produção (OP)</label>
-              <!-- Checkbox para fixar OP -->
-              <label class="flex items-center gap-1.5 text-xs text-indigo-600 font-semibold cursor-pointer select-none bg-indigo-50 px-2 py-0.5 rounded-md hover:bg-indigo-100 transition border border-indigo-200/60">
-                <input type="checkbox" id="fixarOP" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer">
-                <i class="ph ph-push-pin"></i> Fixar OP
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Ordem de Produção (OP)</label>
+              <label class="flex items-center gap-1.5 text-xs text-indigo-600 font-semibold cursor-pointer select-none bg-indigo-50 px-2 py-1 rounded-md border border-indigo-200">
+                <input type="checkbox" id="fixarOP" class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer">
+                <span>Fixar OP</span>
               </label>
             </div>
             <div class="relative">
-              <input type="text" id="op" placeholder="000000-00" maxlength="9" required
-                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-mono tracking-wider uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-              <span class="absolute right-3 top-2.5 text-xs text-slate-400 font-mono pointer-events-none">XXXXXX-XX</span>
+              <input type="text" id="op" placeholder="000000-00" maxlength="9" inputmode="numeric" required
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-3 text-base font-mono tracking-wider uppercase focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition">
+              <span class="absolute right-3 top-3.5 text-xs text-slate-400 font-mono pointer-events-none">XXXXXX-XX</span>
             </div>
           </div>
 
           <!-- Quantidade -->
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Qtd Montada</label>
-            <input type="number" id="quantidade" min="1" placeholder="Ex: 12" required
-              class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-bold text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Qtd Montada</label>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="alterarQtd(-1)" class="w-12 h-12 bg-slate-100 border border-slate-300 rounded-xl text-xl font-bold text-slate-700 flex items-center justify-center active:bg-slate-200">-</button>
+              <input type="number" id="quantidade" min="1" placeholder="Qtd" inputmode="numeric" required
+                class="flex-1 bg-slate-50 border border-slate-300 rounded-xl py-2.5 text-center text-xl font-black text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none">
+              <button type="button" onclick="alterarQtd(1)" class="w-12 h-12 bg-slate-100 border border-slate-300 rounded-xl text-xl font-bold text-slate-700 flex items-center justify-center active:bg-slate-200">+</button>
+            </div>
           </div>
 
           <!-- Data e Hora -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Data</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Data</label>
               <input type="date" id="dataApontamento" required
-                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
             <div>
               <div class="flex justify-between items-center mb-1">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600">Hora</label>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600">Hora</label>
                 <button type="button" onclick="atualizarHoraAgora()" class="text-[10px] text-indigo-600 font-bold hover:underline">Agora</button>
               </div>
               <input type="time" id="horaApontamento" required
-                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
           </div>
 
-          <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl shadow-md shadow-indigo-200 transition flex items-center justify-center gap-2 mt-2">
-            <i class="ph ph-floppy-disk text-lg"></i> Registrar Produção
+          <!-- Botão Gravar -->
+          <button type="submit" id="btnSalvar" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2 text-base mt-2">
+            <i class="ph ph-floppy-disk text-xl"></i> Registrar Produção
           </button>
         </form>
       </div>
 
-      <!-- Card Informativo / Backup -->
-      <div class="bg-indigo-900 text-indigo-100 p-5 rounded-2xl shadow-sm space-y-2">
-        <div class="flex items-center gap-2 text-indigo-300 font-semibold text-sm">
-          <i class="ph ph-lightbulb text-base"></i> Dica de Lançamento
-        </div>
-        <p class="text-xs leading-relaxed text-indigo-200">
-          Ao marcar <strong>Fixar OP</strong>, o número da ordem continuará preenchido após registrar, ideal para quando a mesma OP possui vários lançamentos ou colaboradores.
-        </p>
+      <!-- Card Backup Offline Rápido -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-2 shadow-sm">
+        <button onclick="exportarCSV()" class="flex-1 py-2.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
+          <i class="ph ph-file-csv text-base"></i> Baixar CSV
+        </button>
+        <button onclick="exportarJSON()" class="flex-1 py-2.5 px-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
+          <i class="ph ph-download-simple text-base"></i> Backup JSON
+        </button>
       </div>
     </section>
 
-    <!-- DASHBOARD & HISTÓRICO (8 colunas) -->
+    <!-- PAINÉIS DE VISUALIZAÇÃO (COLUNA DIREITA) -->
     <section class="lg:col-span-8 space-y-6">
 
-      <!-- FILTRO E BALANÇO DO DIA -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
-        <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-100 pb-3">
+      <!-- FECHAMENTO DIÁRIO -->
+      <div id="secaoDia" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
           <div>
-            <h2 class="text-lg font-bold text-slate-800">Fechamento do Dia</h2>
+            <h2 class="text-base sm:text-lg font-bold text-slate-800">Fechamento do Dia</h2>
             <p class="text-xs text-slate-400" id="labelDataSelecionada"></p>
           </div>
           <div class="flex items-center gap-2">
-            <label class="text-xs font-semibold text-slate-500">Ver Dia:</label>
             <input type="date" id="filtroDataDiaria" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-indigo-500">
           </div>
         </div>
 
-        <!-- Totalizadores Diários -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="cardsColaboradoresDia">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="cardsColaboradoresDia">
           <!-- Gerado via JS -->
         </div>
 
-        <div class="bg-slate-50 p-4 rounded-xl flex justify-between items-center border border-slate-200/60">
-          <span class="text-xs font-bold uppercase text-slate-500 tracking-wider">Total de Portas no Dia:</span>
-          <span class="text-2xl font-black text-indigo-700 font-mono" id="totalPortasDia">0</span>
+        <div class="bg-indigo-50/70 p-3.5 rounded-xl flex justify-between items-center border border-indigo-100">
+          <span class="text-xs font-bold uppercase text-indigo-900 tracking-wider">Total Montado no Dia:</span>
+          <span class="text-2xl font-black text-indigo-700 font-mono" id="totalPortasDia">0 portas</span>
         </div>
       </div>
 
       <!-- BALANÇO MENSAL -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
-        <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-100 pb-3">
+      <div id="secaoMes" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
           <div>
-            <h2 class="text-lg font-bold text-slate-800">Balanço Mensal Acumulado</h2>
-            <p class="text-xs text-slate-400">Totalização geral por colaborador no mês</p>
+            <h2 class="text-base sm:text-lg font-bold text-slate-800">Balanço Mensal</h2>
+            <p class="text-xs text-slate-400">Total acumulado por montador</p>
           </div>
           <div class="flex items-center gap-2">
-            <label class="text-xs font-semibold text-slate-500">Mês/Ano:</label>
             <input type="month" id="filtroMesAno" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-indigo-500">
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="cardsMensal">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="cardsMensal">
           <!-- Gerado via JS -->
         </div>
 
-        <div class="flex justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-          <span class="text-sm font-bold text-indigo-900">Total Geral do Mês:</span>
-          <span class="text-2xl font-black text-indigo-900 font-mono" id="totalPortasMes">0 portas</span>
+        <div class="flex justify-between items-center bg-slate-900 text-white p-4 rounded-xl shadow-md">
+          <span class="text-xs sm:text-sm font-semibold uppercase text-slate-300 tracking-wider">Total Acumulado no Mês:</span>
+          <span class="text-2xl sm:text-3xl font-black text-indigo-400 font-mono" id="totalPortasMes">0 portas</span>
         </div>
       </div>
 
-      <!-- HISTÓRICO DE LANÇAMENTOS -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center justify-between">
-          <span>Últimos Lançamentos</span>
-          <span class="text-xs font-normal text-slate-400" id="totalRegistros">0 registros</span>
-        </h2>
+      <!-- HISTÓRICO RECENTE -->
+      <div id="secaoHistorico" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="text-base sm:text-lg font-bold text-slate-800">Últimos Lançamentos</h2>
+          <span class="text-xs text-slate-400 font-semibold" id="totalRegistros">0 registros</span>
+        </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm border-collapse">
+        <!-- Tabela Responsiva com Scroll Horizontal Suave -->
+        <div class="overflow-x-auto -mx-4 sm:mx-0">
+          <table class="w-full text-left text-sm border-collapse min-w-[340px]">
             <thead>
-              <tr class="border-b border-slate-200 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                <th class="py-3 px-3">Data/Hora</th>
-                <th class="py-3 px-3">Colaborador</th>
-                <th class="py-3 px-3">OP</th>
-                <th class="py-3 px-3 text-right">Qtd</th>
-                <th class="py-3 px-3 text-center">Ações</th>
+              <tr class="border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                <th class="py-2.5 px-3">Data/Hora</th>
+                <th class="py-2.5 px-3">Colaborador</th>
+                <th class="py-2.5 px-3">OP</th>
+                <th class="py-2.5 px-3 text-right">Qtd</th>
+                <th class="py-2.5 px-3 text-center">Ação</th>
               </tr>
             </thead>
             <tbody id="tabelaHistorico" class="divide-y divide-slate-100 text-slate-700">
@@ -211,62 +247,230 @@
     </section>
   </main>
 
+  <!-- MODAL DE CONFIGURAÇÃO DO BANCO EM NUVEM (SUPABASE) -->
+  <div id="modalConfig" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100 animate-in fade-in zoom-in duration-200">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="ph ph-cloud-check text-2xl text-indigo-600"></i>
+          <h3 class="font-bold text-slate-800 text-base">Sincronização na Nuvem</h3>
+        </div>
+        <button onclick="fecharModalConfig()" class="text-slate-400 hover:text-slate-600 p-1 text-xl"><i class="ph ph-x"></i></button>
+      </div>
+
+      <p class="text-xs text-slate-500 leading-relaxed">
+        Insira as credenciais do seu projeto gratuito no <strong>Supabase</strong> para que todos os celulares e computadores compartilhem a mesma contagem em tempo real.
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Project URL do Supabase</label>
+          <input type="text" id="supabaseUrl" placeholder="https://xyzcompany.supabase.co"
+            class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">API Key (Anon / Public)</label>
+          <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsIn..."
+            class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2 pt-2">
+        <button onclick="salvarConfigNuvem()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition text-sm">
+          Salvar & Conectar Nuvem
+        </button>
+        <button onclick="desconectarNuvem()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl transition text-xs">
+          Usar Apenas Armazenamento Local (Offline)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const COLABORADORES = ["Lucas", "Vinicius", "Gustavo", "Nalysson"];
-    const STORAGE_KEY = 'producao_portas_db_v1';
+    const STORAGE_KEY = 'producao_portas_db_v3';
+    const CONFIG_KEY = 'producao_portas_cloud_config';
 
-    // Utilitários de data e hora
+    let supabaseClient = null;
+
+    // Utilitários de Data / Hora
     const obterDataHojeFormatada = () => new Date().toISOString().split('T')[0];
     const obterMesAtualFormatado = () => new Date().toISOString().slice(0, 7);
     const obterHoraAtualFormatada = () => {
       const d = new Date();
-      const h = String(d.getHours()).padStart(2, '0');
-      const m = String(d.getMinutes()).padStart(2, '0');
-      return `${h}:${m}`;
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     };
 
     function atualizarHoraAgora() {
       document.getElementById('horaApontamento').value = obterHoraAtualFormatada();
     }
 
-    // Inicialização
+    function alterarQtd(delta) {
+      const input = document.getElementById('quantidade');
+      let valor = parseInt(input.value || 0, 10) + delta;
+      if (valor < 1) valor = 1;
+      input.value = valor;
+    }
+
+    function selecionarColaborador(nome) {
+      document.getElementById('colaborador').value = nome;
+      document.querySelectorAll('.btn-colab').forEach(btn => {
+        if (btn.innerText === nome) {
+          btn.classList.remove('bg-slate-50', 'text-slate-700', 'border-slate-200');
+          btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600', 'shadow-md');
+        } else {
+          btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600', 'shadow-md');
+          btn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
+        }
+      });
+    }
+
+    // NAVEGAÇÃO DE ABAS NO ANDROID / MOBILE
+    function alternarAba(aba) {
+      const secoes = ['secaoApontamento', 'secaoDia', 'secaoMes', 'secaoHistorico'];
+      const botoes = ['tabBtnApontamento', 'tabBtnDia', 'tabBtnMes', 'tabBtnHistorico'];
+      
+      secoes.forEach(id => {
+        const el = document.getElementById(id);
+        if (window.innerWidth < 1024) {
+          el.classList.add('hidden');
+        } else {
+          el.classList.remove('hidden');
+        }
+      });
+
+      botoes.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        btn.classList.remove('border-indigo-600', 'text-indigo-600');
+        btn.classList.add('border-transparent', 'text-slate-500');
+      });
+
+      if (aba === 'apontamento') {
+        document.getElementById('secaoApontamento').classList.remove('hidden');
+        document.getElementById('tabBtnApontamento').classList.add('border-indigo-600', 'text-indigo-600');
+      } else if (aba === 'dia') {
+        document.getElementById('secaoDia').classList.remove('hidden');
+        document.getElementById('tabBtnDia').classList.add('border-indigo-600', 'text-indigo-600');
+      } else if (aba === 'mes') {
+        document.getElementById('secaoMes').classList.remove('hidden');
+        document.getElementById('tabBtnMes').classList.add('border-indigo-600', 'text-indigo-600');
+      } else if (aba === 'historico') {
+        document.getElementById('secaoHistorico').classList.remove('hidden');
+        document.getElementById('tabBtnHistorico').classList.add('border-indigo-600', 'text-indigo-600');
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 1024) {
+        document.querySelectorAll('#secaoApontamento, #secaoDia, #secaoMes, #secaoHistorico').forEach(el => el.classList.remove('hidden'));
+      }
+    });
+
+    // INICIALIZAÇÃO
     document.addEventListener('DOMContentLoaded', () => {
       const hoje = obterDataHojeFormatada();
-      const mesAtual = obterMesAtualFormatado();
-
       document.getElementById('dataApontamento').value = hoje;
       document.getElementById('horaApontamento').value = obterHoraAtualFormatada();
       document.getElementById('filtroDataDiaria').value = hoje;
-      document.getElementById('filtroMesAno').value = mesAtual;
+      document.getElementById('filtroMesAno').value = obterMesAtualFormatado();
 
       configurarMascaraOP();
+      inicializarClienteNuvem();
       renderizarTudo();
+
+      // Ajusta visão mobile inicial
+      if (window.innerWidth < 1024) {
+        alternarAba('apontamento');
+      }
     });
 
     // MÁSCARA AUTOMÁTICA DE OP: XXXXXX-XX
     function configurarMascaraOP() {
       const opInput = document.getElementById('op');
       opInput.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/\D/g, ''); // Apenas números
-        if (value.length > 8) value = value.slice(0, 8);
-        if (value.length > 6) {
-          value = `${value.slice(0, 6)}-${value.slice(6)}`;
+        let val = e.target.value.replace(/\D/g, '');
+        if (val.length > 8) val = val.slice(0, 8);
+        if (val.length > 6) {
+          val = `${val.slice(0, 6)}-${val.slice(6)}`;
         }
-        e.target.value = value;
+        e.target.value = val;
       });
     }
 
-    // Banco de Dados Local
-    function obterRegistros() {
+    // BANCO LOCAL & NUVEM
+    function obterRegistrosLocais() {
       return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     }
 
-    function salvarRegistros(registros) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
+    function salvarRegistrosLocais(regs) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(regs));
     }
 
-    // Formulário Submit
-    document.getElementById('formProducao').addEventListener('submit', (e) => {
+    function inicializarClienteNuvem() {
+      const config = JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null');
+      const dot = document.getElementById('cloudStatusDot');
+      const text = document.getElementById('cloudStatusText');
+
+      if (config && config.url && config.key && window.supabase) {
+        try {
+          supabaseClient = window.supabase.createClient(config.url, config.key);
+          dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+          text.innerText = "Nuvem Conectada";
+          sincronizar();
+        } catch (e) {
+          console.error(e);
+          dot.className = "w-2 h-2 rounded-full bg-rose-500";
+          text.innerText = "Erro na Nuvem";
+        }
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-amber-400";
+        text.innerText = "Modo Offline (Local)";
+      }
+    }
+
+    async function sincronizar() {
+      const syncIcon = document.getElementById('syncIcon');
+      syncIcon.classList.add('animate-spin');
+
+      if (supabaseClient) {
+        try {
+          // Busca dados da nuvem
+          const { data, error } = await supabaseClient
+            .from('producao_portas')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (!error && data) {
+            // Mescla nuvem com local
+            const locais = obterRegistrosLocais();
+            const mapGeral = new Map();
+
+            data.forEach(item => mapGeral.set(item.id, item));
+            locais.forEach(item => {
+              if (!mapGeral.has(item.id)) {
+                mapGeral.set(item.id, item);
+                // Sobe o que só existia no local
+                supabaseClient.from('producao_portas').upsert(item).then();
+              }
+            });
+
+            const unificados = Array.from(mapGeral.values()).sort((a,b) => {
+              return (b.data + b.hora).localeCompare(a.data + a.hora);
+            });
+
+            salvarRegistrosLocais(unificados);
+          }
+        } catch (err) {
+          console.warn("Falha de sincronização na nuvem:", err);
+        }
+      }
+
+      renderizarTudo();
+      setTimeout(() => syncIcon.classList.remove('animate-spin'), 600);
+    }
+
+    // FORMULÁRIO DE ENVIO
+    document.getElementById('formProducao').addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const colaborador = document.getElementById('colaborador').value;
@@ -276,18 +480,18 @@
       const hora = document.getElementById('horaApontamento').value || obterHoraAtualFormatada();
       const fixarOP = document.getElementById('fixarOP').checked;
 
-      if (!colaborador || !op || isNaN(quantidade) || !data) {
-        alert('Por favor, preencha todos os campos corretamente.');
+      if (!colaborador) {
+        alert('Por favor, toque no nome do colaborador que realizou a montagem.');
         return;
       }
 
       if (op.length < 9) {
-        alert('A OP precisa estar no padrão correto: 6 dígitos, traço e 2 dígitos (Ex: 000123-01).');
+        alert('Formato de OP inválido. Use 6 dígitos + 2 dígitos (Ex: 000123-01).');
         return;
       }
 
       const novoRegistro = {
-        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+        id: crypto.randomUUID ? crypto.randomUUID() : 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         colaborador,
         op,
         quantidade,
@@ -295,11 +499,19 @@
         hora
       };
 
-      const registros = obterRegistros();
+      // 1. Salva localmente primeiro (Resposta instantânea)
+      const registros = obterRegistrosLocais();
       registros.unshift(novoRegistro);
-      salvarRegistros(registros);
+      salvarRegistrosLocais(registros);
 
-      // Limpar campos de entrada conforme opção Fixar OP
+      // 2. Salva na nuvem se conectada
+      if (supabaseClient) {
+        supabaseClient.from('producao_portas').insert([novoRegistro]).then(({ error }) => {
+          if (error) console.error("Erro ao salvar na nuvem:", error);
+        });
+      }
+
+      // Reset inteligente
       document.getElementById('quantidade').value = '';
       document.getElementById('horaApontamento').value = obterHoraAtualFormatada();
 
@@ -307,50 +519,77 @@
         document.getElementById('op').value = '';
         document.getElementById('op').focus();
       } else {
-        // Se a OP está fixada, foca diretamente no campo de quantidade para agilizar o próximo lançamento
         document.getElementById('quantidade').focus();
       }
 
       renderizarTudo();
     });
 
-    // Exclusão de Registro
-    function excluirRegistro(id) {
+    // EXCLUSÃO
+    async function excluirRegistro(id) {
       if (confirm('Deseja realmente remover este lançamento?')) {
-        let registros = obterRegistros();
-        registros = registros.filter(r => r.id !== id);
-        salvarRegistros(registros);
+        let registros = obterRegistrosLocais().filter(r => r.id !== id);
+        salvarRegistrosLocais(registros);
+
+        if (supabaseClient) {
+          await supabaseClient.from('producao_portas').delete().eq('id', id);
+        }
+
         renderizarTudo();
       }
     }
 
-    // Limpar Banco
-    function limparTudo() {
-      if (confirm('ATENÇÃO: Deseja apagar todos os lançamentos cadastrados? Essa ação não pode ser desfeita.')) {
-        localStorage.removeItem(STORAGE_KEY);
-        renderizarTudo();
-      }
+    // MODAL DE CONFIGURAÇÃO NUVEM
+    function abrirModalConfig() {
+      const config = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+      document.getElementById('supabaseUrl').value = config.url || '';
+      document.getElementById('supabaseKey').value = config.key || '';
+      document.getElementById('modalConfig').classList.remove('hidden');
     }
 
-    // Filtros de visualização
+    function fecharModalConfig() {
+      document.getElementById('modalConfig').classList.add('hidden');
+    }
+
+    function salvarConfigNuvem() {
+      const url = document.getElementById('supabaseUrl').value.trim();
+      const key = document.getElementById('supabaseKey').value.trim();
+
+      if (!url || !key) {
+        alert('Por favor, informe a URL e a Chave do Supabase.');
+        return;
+      }
+
+      localStorage.setItem(CONFIG_KEY, JSON.stringify({ url, key }));
+      fecharModalConfig();
+      inicializarClienteNuvem();
+    }
+
+    function desconectarNuvem() {
+      localStorage.removeItem(CONFIG_KEY);
+      supabaseClient = null;
+      fecharModalConfig();
+      inicializarClienteNuvem();
+    }
+
+    // FILTROS & EVENTOS
     document.getElementById('filtroDataDiaria').addEventListener('change', renderizarDiario);
     document.getElementById('filtroMesAno').addEventListener('change', renderizarMensal);
 
-    // RENDERIZAÇÃO GERAL
+    // RENDERIZAÇÃO
     function renderizarTudo() {
       renderizarDiario();
       renderizarMensal();
       renderizarHistorico();
     }
 
-    // Renderizar Balanço do Dia Selecionado
     function renderizarDiario() {
       const dataFiltro = document.getElementById('filtroDataDiaria').value;
-      const registros = obterRegistros();
+      const registros = obterRegistrosLocais();
 
       const partes = dataFiltro.split('-');
       if (partes.length === 3) {
-        document.getElementById('labelDataSelecionada').innerText = `Produção referente a ${partes[2]}/${partes[1]}/${partes[0]}`;
+        document.getElementById('labelDataSelecionada').innerText = `Produção em ${partes[2]}/${partes[1]}/${partes[0]}`;
       }
 
       const registrosDia = registros.filter(r => r.data === dataFiltro);
@@ -367,10 +606,10 @@
         totalGeralDia += totalPessoa;
 
         const card = document.createElement('div');
-        card.className = 'bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-center';
+        card.className = 'bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 text-center';
         card.innerHTML = `
-          <p class="text-xs font-semibold text-slate-500 mb-1">${nome}</p>
-          <p class="text-xl font-bold text-slate-800">${totalPessoa} <span class="text-xs font-normal text-slate-400">un</span></p>
+          <p class="text-[11px] font-bold text-slate-500 mb-0.5 truncate">${nome}</p>
+          <p class="text-lg font-black text-slate-800">${totalPessoa} <span class="text-[10px] font-normal text-slate-400">un</span></p>
         `;
         container.appendChild(card);
       });
@@ -378,12 +617,11 @@
       document.getElementById('totalPortasDia').innerText = `${totalGeralDia} portas`;
     }
 
-    // Renderizar Balanço Mensal
     function renderizarMensal() {
-      const mesAnoFiltro = document.getElementById('filtroMesAno').value; // YYYY-MM
-      const registros = obterRegistros();
+      const mesAnoFiltro = document.getElementById('filtroMesAno').value;
+      const registros = obterRegistrosLocais();
 
-      const registrosMes = registros.filter(r => r.data.startsWith(mesAnoFiltro));
+      const registrosMes = registros.filter(r => r.data && r.data.startsWith(mesAnoFiltro));
       let totalGeralMes = 0;
 
       const container = document.getElementById('cardsMensal');
@@ -397,17 +635,12 @@
         totalGeralMes += totalPessoa;
 
         const card = document.createElement('div');
-        card.className = 'bg-white p-4 rounded-xl border border-slate-200 flex flex-col justify-between shadow-sm';
+        card.className = 'bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between';
         card.innerHTML = `
-          <div class="flex items-center gap-2 mb-2">
-            <div class="w-7 h-7 bg-indigo-100 text-indigo-700 font-bold rounded-full flex items-center justify-center text-xs">
-              ${nome.charAt(0)}
-            </div>
-            <span class="font-bold text-slate-700 text-sm">${nome}</span>
-          </div>
-          <div class="text-right">
-            <span class="text-2xl font-black text-slate-800">${totalPessoa}</span>
-            <span class="text-xs text-slate-400 block">portas montadas</span>
+          <span class="font-bold text-slate-700 text-xs truncate">${nome}</span>
+          <div class="mt-1">
+            <span class="text-xl font-black text-indigo-900">${totalPessoa}</span>
+            <span class="text-[10px] text-slate-400 block -mt-1">portas</span>
           </div>
         `;
         container.appendChild(card);
@@ -416,9 +649,8 @@
       document.getElementById('totalPortasMes').innerText = `${totalGeralMes} portas`;
     }
 
-    // Renderizar Histórico
     function renderizarHistorico() {
-      const registros = obterRegistros();
+      const registros = obterRegistrosLocais();
       const tbody = document.getElementById('tabelaHistorico');
       document.getElementById('totalRegistros').innerText = `${registros.length} registros`;
 
@@ -427,8 +659,8 @@
       if (registros.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" class="py-8 text-center text-slate-400 text-xs italic">
-              Nenhum apontamento cadastrado até o momento.
+            <td colspan="5" class="py-6 text-center text-slate-400 text-xs italic">
+              Nenhum registro encontrado.
             </td>
           </tr>
         `;
@@ -437,21 +669,21 @@
 
       registros.slice(0, 30).forEach(reg => {
         const partesData = reg.data.split('-');
-        const dataFormatada = `${partesData[2]}/${partesData[1]}/${partesData[0]}`;
+        const dataFormatada = `${partesData[2]}/${partesData[1]}`;
         const horaFormatada = reg.hora || '--:--';
 
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50/70 transition';
+        tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
         tr.innerHTML = `
-          <td class="py-2.5 px-3 text-xs text-slate-600 font-mono">
+          <td class="py-2.5 px-3 text-xs text-slate-600 font-mono leading-tight">
             <span>${dataFormatada}</span>
-            <span class="text-slate-400 text-[11px] block">${horaFormatada}</span>
+            <span class="text-slate-400 text-[10px] block">${horaFormatada}</span>
           </td>
-          <td class="py-2.5 px-3 font-semibold text-slate-800">${reg.colaborador}</td>
-          <td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono text-xs font-semibold">${reg.op}</span></td>
-          <td class="py-2.5 px-3 text-right font-bold text-indigo-600">${reg.quantidade}</td>
+          <td class="py-2.5 px-3 font-semibold text-slate-800 text-xs">${reg.colaborador}</td>
+          <td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono text-xs font-semibold">${reg.op}</span></td>
+          <td class="py-2.5 px-3 text-right font-black text-indigo-600 text-sm">${reg.quantidade}</td>
           <td class="py-2.5 px-3 text-center">
-            <button onclick="excluirRegistro('${reg.id}')" class="text-slate-400 hover:text-rose-600 transition p-1" title="Excluir">
+            <button onclick="excluirRegistro('${reg.id}')" class="text-slate-400 hover:text-rose-600 active:scale-90 transition p-1">
               <i class="ph ph-trash text-base"></i>
             </button>
           </td>
@@ -460,111 +692,34 @@
       });
     }
 
-    // EXPORTAR PARA CSV
+    // EXPORTAÇÕES
     function exportarCSV() {
-      const registros = obterRegistros();
-      if (registros.length === 0) {
-        alert('Não há dados disponíveis para exportação.');
-        return;
-      }
+      const registros = obterRegistrosLocais();
+      if (registros.length === 0) return alert('Sem dados para exportar.');
 
-      let csvContent = "\uFEFF"; // BOM para acentuação no Excel
-      csvContent += "Data;Hora;Colaborador;Ordem de Producao;Quantidade\n";
-
+      let csvContent = "\uFEFFData;Hora;Colaborador;OP;Quantidade\n";
       registros.forEach(r => {
-        const partes = r.data.split('-');
-        const dataFormatada = `${partes[2]}/${partes[1]}/${partes[0]}`;
-        const horaFormatada = r.hora || '';
-        csvContent += `"${dataFormatada}";"${horaFormatada}";"${r.colaborador}";"${r.op}";${r.quantidade}\n`;
+        csvContent += `"${r.data}";"${r.hora || ''}";"${r.colaborador}";"${r.op}";${r.quantidade}\n`;
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `producao_portas_${obterDataHojeFormatada()}.csv`);
-      document.body.appendChild(link);
+      link.href = url;
+      link.download = `producao_portas_${obterDataHojeFormatada()}.csv`;
       link.click();
-      document.body.removeChild(link);
     }
 
-    // EXPORTAR BACKUP (JSON)
     function exportarJSON() {
-      const registros = obterRegistros();
-      if (registros.length === 0) {
-        alert('Não há dados cadastrados para gerar backup.');
-        return;
-      }
+      const registros = obterRegistrosLocais();
+      if (registros.length === 0) return alert('Sem dados para backup.');
 
-      const backupData = {
-        versao: "1.1",
-        dataBackup: new Date().toISOString(),
-        totalRegistros: registros.length,
-        dados: registros
-      };
-
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `backup_portas_${obterDataHojeFormatada()}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
-    // IMPORTAR BACKUP (JSON)
-    function importarJSON(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const conteudo = JSON.parse(e.target.result);
-          let novosRegistros = [];
-
-          if (Array.isArray(conteudo)) {
-            novosRegistros = conteudo;
-          } else if (conteudo && Array.isArray(conteudo.dados)) {
-            novosRegistros = conteudo.dados;
-          } else {
-            throw new Error('Formato de arquivo JSON inválido.');
-          }
-
-          const registrosValidos = novosRegistros.filter(r => r.colaborador && r.op && r.quantidade && r.data);
-
-          if (registrosValidos.length === 0) {
-            alert('O arquivo selecionado não contém registros válidos de produção.');
-            return;
-          }
-
-          const opcao = confirm(
-            `Arquivo carregado com sucesso com ${registrosValidos.length} registros!\n\n` +
-            `Clique em "OK" para SUBSTITUIR todos os dados atuais.\n` +
-            `Clique em "Cancelar" para apenas UNIR (mesclar) com os registros já existentes.`
-          );
-
-          if (opcao) {
-            salvarRegistros(registrosValidos);
-          } else {
-            const registrosAtuais = obterRegistros();
-            const idsExistentes = new Set(registrosAtuais.map(r => r.id));
-            const novosSemDuplicar = registrosValidos.filter(r => !idsExistentes.has(r.id));
-            const registrosMesclados = [...novosSemDuplicar, ...registrosAtuais];
-            salvarRegistros(registrosMesclados);
-          }
-
-          renderizarTudo();
-          alert('Backup restaurado com sucesso!');
-        } catch (erro) {
-          alert('Erro ao ler o arquivo JSON. Certifique-se de que é um arquivo de backup válido.');
-          console.error(erro);
-        } finally {
-          event.target.value = '';
-        }
-      };
-
-      reader.readAsText(file);
+      const blob = new Blob([JSON.stringify({ dataBackup: new Date().toISOString(), dados: registros }, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `backup_portas_${obterDataHojeFormatada()}.json`;
+      link.click();
     }
   </script>
 </body>
