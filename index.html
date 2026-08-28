@@ -23,22 +23,23 @@
       -webkit-appearance: none; 
       margin: 0; 
     }
-    /* Previne zoom acidental no iOS/Android ao focar em inputs */
+    /* Tamanho de fonte que evita zoom automático no mobile */
     input, select, button {
-      font-size: 16px !important;
+      font-size: 15px !important;
     }
-    .status-pulse {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 4px;
+      width: 4px;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: .4; }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
     }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen pb-24 lg:pb-12 antialiased select-none">
+<body class="bg-slate-100 text-slate-800 min-h-screen pb-28 lg:pb-12 antialiased select-none">
 
-  <!-- TOPO / CABEÇALHO RESPONSIVO -->
+  <!-- CABEÇALHO RESPONSIVO -->
   <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
     <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
       <div class="flex items-center gap-2.5">
@@ -47,64 +48,83 @@
         </div>
         <div>
           <h1 class="text-base sm:text-lg font-bold leading-tight">Montagem de Portas</h1>
-          <!-- Indicador de Status Nuvem / Local -->
           <div class="flex items-center gap-1.5 mt-0.5">
-            <span id="cloudStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-            <span id="cloudStatusText" class="text-[11px] text-slate-300 font-medium">Modo Offline (Local)</span>
+            <span id="cloudStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span id="cloudStatusText" class="text-[11px] text-slate-300 font-medium">Nuvem Conectada</span>
           </div>
         </div>
       </div>
 
-      <!-- Botão de Configuração da Nuvem -->
-      <button onclick="abrirModalConfig()" class="p-2 sm:px-3 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95">
-        <i class="ph ph-cloud-arrow-up text-lg text-indigo-400"></i>
-        <span class="hidden sm:inline">Configurar Nuvem</span>
-      </button>
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <!-- Gerenciar Equipe -->
+        <button onclick="abrirModalColaboradores()" class="p-2 sm:px-3 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95" title="Gerenciar Colaboradores">
+          <i class="ph ph-users text-lg text-amber-400"></i>
+          <span class="hidden sm:inline">Equipe</span>
+        </button>
+
+        <!-- Nuvem / Configurações -->
+        <button onclick="abrirModalConfig()" class="p-2 sm:px-3 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95" title="Configurar Nuvem">
+          <i class="ph ph-cloud-arrow-up text-lg text-indigo-400"></i>
+          <span class="hidden sm:inline">Nuvem</span>
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- ABAS MOBILE (Fácil navegação com polegar no Android) -->
-  <div class="lg:hidden bg-white border-b border-slate-200 sticky top-[61px] z-30 flex">
-    <button onclick="alternarAba('apontamento')" id="tabBtnApontamento" class="flex-1 py-3 text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 flex justify-center items-center gap-1.5">
-      <i class="ph ph-plus-circle text-base"></i> Apontar
+  <!-- NAVEGAÇÃO POR ABAS NO MOBILE (Android) -->
+  <div class="lg:hidden bg-white border-b border-slate-200 sticky top-[61px] z-30 flex shadow-sm">
+    <button onclick="alternarAba('apontamento')" id="tabBtnApontamento" class="flex-1 py-3 text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 flex flex-col justify-center items-center gap-0.5">
+      <i class="ph ph-plus-circle text-lg"></i> Apontar
     </button>
-    <button onclick="alternarAba('dia')" id="tabBtnDia" class="flex-1 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 flex justify-center items-center gap-1.5">
-      <i class="ph ph-calendar-check text-base"></i> Dia
+    <button onclick="alternarAba('ranking')" id="tabBtnRanking" class="flex-1 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 flex flex-col justify-center items-center gap-0.5">
+      <i class="ph ph-trophy text-lg"></i> Ranking
     </button>
-    <button onclick="alternarAba('mes')" id="tabBtnMes" class="flex-1 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 flex justify-center items-center gap-1.5">
-      <i class="ph ph-chart-bar text-base"></i> Mês
+    <button onclick="alternarAba('fechamentos')" id="tabBtnFechamentos" class="flex-1 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 flex flex-col justify-center items-center gap-0.5">
+      <i class="ph ph-chart-bar text-lg"></i> Totais
     </button>
-    <button onclick="alternarAba('historico')" id="tabBtnHistorico" class="flex-1 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 flex justify-center items-center gap-1.5">
-      <i class="ph ph-clock-counter-clockwise text-base"></i> Lista
+    <button onclick="alternarAba('historico')" id="tabBtnHistorico" class="flex-1 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 flex flex-col justify-center items-center gap-0.5">
+      <i class="ph ph-list-dashes text-lg"></i> Lista
     </button>
   </div>
 
   <!-- CONTEÚDO PRINCIPAL -->
   <main class="max-w-7xl mx-auto px-3 sm:px-4 mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-    <!-- SEÇÃO FORMULÁRIO (COLUNA ESQUERDA) -->
+    <!-- COLUNA ESQUERDA: FORMULÁRIO DE LANÇAMENTO E BACKUP -->
     <section id="secaoApontamento" class="lg:col-span-4 space-y-4">
-      <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+      <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 relative">
+        
+        <!-- Indicador de Edição Ativa -->
+        <div id="bannerEdicao" class="hidden mb-3 p-2.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-xs text-amber-800 font-bold">
+            <i class="ph ph-pencil-simple-line text-base"></i> Editando Apontamento
+          </div>
+          <button onclick="cancelarEdicao()" class="text-xs text-amber-700 hover:text-amber-950 font-bold underline">Cancelar</button>
+        </div>
+
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+          <h2 id="tituloFormulario" class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
             <i class="ph ph-plus-circle text-indigo-600 text-xl"></i> Novo Apontamento
           </h2>
-          <!-- Botão Sincronizar Manual -->
-          <button onclick="sincronizar()" class="text-xs text-indigo-600 font-semibold flex items-center gap-1 bg-indigo-50 px-2.5 py-1 rounded-lg hover:bg-indigo-100 active:scale-95">
+          <button type="button" onclick="sincronizar()" class="text-xs text-indigo-600 font-semibold flex items-center gap-1 bg-indigo-50 px-2.5 py-1 rounded-lg hover:bg-indigo-100 active:scale-95">
             <i class="ph ph-arrows-clockwise text-sm" id="syncIcon"></i> Sincronizar
           </button>
         </div>
 
         <form id="formProducao" class="space-y-4">
-          <!-- Colaborador -->
+          <input type="hidden" id="editandoId" value="">
+
+          <!-- Colaborador com Seleção Rápida -->
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Colaborador</label>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Colaborador</label>
+              <button type="button" onclick="abrirModalColaboradores()" class="text-[11px] text-indigo-600 font-bold hover:underline flex items-center gap-0.5">
+                <i class="ph ph-gear-six"></i> Ajustar Equipe
+              </button>
+            </div>
+            
             <div class="grid grid-cols-2 gap-2" id="gridColaboradores">
-              <!-- Botões rápidos de seleção para Mobile -->
-              <button type="button" onclick="selecionarColaborador('Lucas')" class="btn-colab p-3 text-sm font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-center active:scale-95 transition">Lucas</button>
-              <button type="button" onclick="selecionarColaborador('Vinicius')" class="btn-colab p-3 text-sm font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-center active:scale-95 transition">Vinicius</button>
-              <button type="button" onclick="selecionarColaborador('Gustavo')" class="btn-colab p-3 text-sm font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-center active:scale-95 transition">Gustavo</button>
-              <button type="button" onclick="selecionarColaborador('Nalysson')" class="btn-colab p-3 text-sm font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-center active:scale-95 transition">Nalysson</button>
+              <!-- Gerado dinamicamente via JS -->
             </div>
             <input type="hidden" id="colaborador" required>
           </div>
@@ -113,15 +133,15 @@
           <div>
             <div class="flex justify-between items-center mb-1">
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Ordem de Produção (OP)</label>
-              <label class="flex items-center gap-1.5 text-xs text-indigo-600 font-semibold cursor-pointer select-none bg-indigo-50 px-2 py-1 rounded-md border border-indigo-200">
-                <input type="checkbox" id="fixarOP" class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer">
+              <label class="flex items-center gap-1.5 text-xs text-indigo-600 font-semibold cursor-pointer select-none bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                <input type="checkbox" id="fixarOP" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer">
                 <span>Fixar OP</span>
               </label>
             </div>
             <div class="relative">
               <input type="text" id="op" placeholder="000000-00" maxlength="9" inputmode="numeric" required
-                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-3 text-base font-mono tracking-wider uppercase focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition">
-              <span class="absolute right-3 top-3.5 text-xs text-slate-400 font-mono pointer-events-none">XXXXXX-XX</span>
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-base font-mono tracking-wider uppercase focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition">
+              <span class="absolute right-3 top-3 text-xs text-slate-400 font-mono pointer-events-none">XXXXXX-XX</span>
             </div>
           </div>
 
@@ -129,10 +149,10 @@
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Qtd Montada</label>
             <div class="flex items-center gap-2">
-              <button type="button" onclick="alterarQtd(-1)" class="w-12 h-12 bg-slate-100 border border-slate-300 rounded-xl text-xl font-bold text-slate-700 flex items-center justify-center active:bg-slate-200">-</button>
-              <input type="number" id="quantidade" min="1" placeholder="Qtd" inputmode="numeric" required
-                class="flex-1 bg-slate-50 border border-slate-300 rounded-xl py-2.5 text-center text-xl font-black text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none">
-              <button type="button" onclick="alterarQtd(1)" class="w-12 h-12 bg-slate-100 border border-slate-300 rounded-xl text-xl font-bold text-slate-700 flex items-center justify-center active:bg-slate-200">+</button>
+              <button type="button" onclick="alterarQtd(-1)" class="w-12 h-11 bg-slate-100 border border-slate-300 rounded-xl text-xl font-bold text-slate-700 flex items-center justify-center active:bg-slate-200">-</button>
+              <input type="number" id="quantidade" min="1" placeholder="Ex: 10" inputmode="numeric" required
+                class="flex-1 bg-slate-50 border border-slate-300 rounded-xl py-2 text-center text-xl font-black text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none">
+              <button type="button" onclick="alterarQtd(1)" class="w-12 h-11 bg-slate-100 border border-slate-300 rounded-xl text-xl font-bold text-slate-700 flex items-center justify-center active:bg-slate-200">+</button>
             </div>
           </div>
 
@@ -141,7 +161,7 @@
             <div>
               <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Data</label>
               <input type="date" id="dataApontamento" required
-                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
             <div>
               <div class="flex justify-between items-center mb-1">
@@ -149,92 +169,157 @@
                 <button type="button" onclick="atualizarHoraAgora()" class="text-[10px] text-indigo-600 font-bold hover:underline">Agora</button>
               </div>
               <input type="time" id="horaApontamento" required
-                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
           </div>
 
-          <!-- Botão Gravar -->
-          <button type="submit" id="btnSalvar" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2 text-base mt-2">
-            <i class="ph ph-floppy-disk text-xl"></i> Registrar Produção
-          </button>
+          <!-- Botões de Gravação / Atualização -->
+          <div class="space-y-2 pt-1">
+            <button type="submit" id="btnSalvar" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2 text-base">
+              <i class="ph ph-floppy-disk text-lg"></i> <span id="btnSalvarTexto">Registrar Produção</span>
+            </button>
+            <button type="button" id="btnCancelarEdicao" onclick="cancelarEdicao()" class="hidden w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 rounded-xl text-xs transition">
+              Cancelar Edição
+            </button>
+          </div>
         </form>
       </div>
 
-      <!-- Card Backup Offline Rápido -->
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-2 shadow-sm">
-        <button onclick="exportarCSV()" class="flex-1 py-2.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
-          <i class="ph ph-file-csv text-base"></i> Baixar CSV
-        </button>
-        <button onclick="exportarJSON()" class="flex-1 py-2.5 px-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
-          <i class="ph ph-download-simple text-base"></i> Backup JSON
+      <!-- FERRAMENTAS DE BACKUP / IMPORTAÇÃO E EXPORTAÇÃO -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider">
+          <i class="ph ph-database text-indigo-600 text-base"></i> Backups e Exportações
+        </div>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <!-- Exportar JSON -->
+          <button onclick="exportarJSON()" class="py-2 px-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95">
+            <i class="ph ph-download-simple text-base"></i> Backup JSON
+          </button>
+          
+          <!-- Importar JSON -->
+          <label class="py-2 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 cursor-pointer text-center">
+            <i class="ph ph-upload-simple text-base"></i> Restaurar JSON
+            <input type="file" id="inputImportarJSON" accept=".json" class="hidden" onchange="importarJSON(event)">
+          </label>
+        </div>
+
+        <!-- Exportar CSV -->
+        <button onclick="exportarCSV()" class="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95">
+          <i class="ph ph-file-csv text-base"></i> Baixar Planilha CSV (Excel)
         </button>
       </div>
     </section>
 
-    <!-- PAINÉIS DE VISUALIZAÇÃO (COLUNA DIREITA) -->
+    <!-- COLUNA DIREITA: DASHBOARD DE RANKING, FECHAMENTOS E HISTÓRICO -->
     <section class="lg:col-span-8 space-y-6">
 
-      <!-- FECHAMENTO DIÁRIO -->
-      <div id="secaoDia" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
-          <div>
-            <h2 class="text-base sm:text-lg font-bold text-slate-800">Fechamento do Dia</h2>
-            <p class="text-xs text-slate-400" id="labelDataSelecionada"></p>
-          </div>
+      <!-- 1. DASHBOARD DE RANKING / QUEM MONTOU MAIS PORTAS -->
+      <div id="secaoRanking" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b border-slate-100 pb-3">
           <div class="flex items-center gap-2">
-            <input type="date" id="filtroDataDiaria" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-indigo-500">
+            <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+              <i class="ph ph-trophy text-xl"></i>
+            </div>
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-800">Ranking de Produção</h2>
+              <p class="text-xs text-slate-400" id="labelFiltroRanking">Quem produziu mais portas</p>
+            </div>
+          </div>
+
+          <!-- Filtro de Período (Dia vs Mês) -->
+          <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+            <button onclick="setTipoFiltroRanking('dia')" id="btnRankFiltroDia" class="px-3 py-1 text-xs font-bold rounded-lg transition bg-white text-indigo-700 shadow-sm">
+              Por Dia
+            </button>
+            <button onclick="setTipoFiltroRanking('mes')" id="btnRankFiltroMes" class="px-3 py-1 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900">
+              Por Mês
+            </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="cardsColaboradoresDia">
-          <!-- Gerado via JS -->
+        <!-- Seletores de Data específicos do Ranking -->
+        <div class="flex items-center justify-between gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+          <span class="text-xs font-semibold text-slate-600" id="labelRankingPeriodo">Data Avaliada:</span>
+          <div id="wrapperFiltroDataRanking">
+            <input type="date" id="filtroDataRanking" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-semibold focus:ring-2 focus:ring-indigo-500">
+            <input type="month" id="filtroMesRanking" class="hidden bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-semibold focus:ring-2 focus:ring-indigo-500">
+          </div>
         </div>
 
-        <div class="bg-indigo-50/70 p-3.5 rounded-xl flex justify-between items-center border border-indigo-100">
-          <span class="text-xs font-bold uppercase text-indigo-900 tracking-wider">Total Montado no Dia:</span>
-          <span class="text-2xl font-black text-indigo-700 font-mono" id="totalPortasDia">0 portas</span>
+        <!-- Lista / Barras do Ranking -->
+        <div class="space-y-3" id="containerRankingBarras">
+          <!-- Gerado via JS -->
         </div>
       </div>
 
-      <!-- BALANÇO MENSAL -->
-      <div id="secaoMes" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
-          <div>
-            <h2 class="text-base sm:text-lg font-bold text-slate-800">Balanço Mensal</h2>
-            <p class="text-xs text-slate-400">Total acumulado por montador</p>
+      <!-- 2. FECHAMENTOS (DIÁRIO E MENSAL) -->
+      <div id="secaoFechamentos" class="space-y-6">
+        
+        <!-- FECHAMENTO DIÁRIO -->
+        <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-800">Fechamento do Dia</h2>
+              <p class="text-xs text-slate-400" id="labelDataSelecionada"></p>
+            </div>
+            <div>
+              <input type="date" id="filtroDataDiaria" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-indigo-500">
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <input type="month" id="filtroMesAno" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-indigo-500">
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="cardsColaboradoresDia">
+            <!-- Gerado via JS -->
+          </div>
+
+          <div class="bg-indigo-50/70 p-3.5 rounded-xl flex justify-between items-center border border-indigo-100">
+            <span class="text-xs font-bold uppercase text-indigo-900 tracking-wider">Total Geral do Dia:</span>
+            <span class="text-2xl font-black text-indigo-700 font-mono" id="totalPortasDia">0 portas</span>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="cardsMensal">
-          <!-- Gerado via JS -->
-        </div>
+        <!-- BALANÇO MENSAL -->
+        <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-800">Balanço Mensal</h2>
+              <p class="text-xs text-slate-400">Total acumulado por montador no mês</p>
+            </div>
+            <div>
+              <input type="month" id="filtroMesAno" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
 
-        <div class="flex justify-between items-center bg-slate-900 text-white p-4 rounded-xl shadow-md">
-          <span class="text-xs sm:text-sm font-semibold uppercase text-slate-300 tracking-wider">Total Acumulado no Mês:</span>
-          <span class="text-2xl sm:text-3xl font-black text-indigo-400 font-mono" id="totalPortasMes">0 portas</span>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="cardsMensal">
+            <!-- Gerado via JS -->
+          </div>
+
+          <div class="flex justify-between items-center bg-slate-900 text-white p-4 rounded-xl shadow-md">
+            <span class="text-xs sm:text-sm font-semibold uppercase text-slate-300 tracking-wider">Total Acumulado no Mês:</span>
+            <span class="text-2xl sm:text-3xl font-black text-indigo-400 font-mono" id="totalPortasMes">0 portas</span>
+          </div>
         </div>
       </div>
 
-      <!-- HISTÓRICO RECENTE -->
+      <!-- 3. HISTÓRICO DE LANÇAMENTOS COM EDIÇÃO E EXCLUSÃO -->
       <div id="secaoHistorico" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-        <div class="flex justify-between items-center">
-          <h2 class="text-base sm:text-lg font-bold text-slate-800">Últimos Lançamentos</h2>
-          <span class="text-xs text-slate-400 font-semibold" id="totalRegistros">0 registros</span>
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-800">Histórico de Lançamentos</h2>
+            <p class="text-xs text-slate-400">Clique no ícone de lápis para editar ou na lixeira para excluir</p>
+          </div>
+          <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-bold" id="totalRegistros">0 registros</span>
         </div>
 
-        <!-- Tabela Responsiva com Scroll Horizontal Suave -->
-        <div class="overflow-x-auto -mx-4 sm:mx-0">
-          <table class="w-full text-left text-sm border-collapse min-w-[340px]">
+        <div class="overflow-x-auto -mx-4 sm:mx-0 custom-scrollbar">
+          <table class="w-full text-left text-sm border-collapse min-w-[420px]">
             <thead>
               <tr class="border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
                 <th class="py-2.5 px-3">Data/Hora</th>
                 <th class="py-2.5 px-3">Colaborador</th>
                 <th class="py-2.5 px-3">OP</th>
                 <th class="py-2.5 px-3 text-right">Qtd</th>
-                <th class="py-2.5 px-3 text-center">Ação</th>
+                <th class="py-2.5 px-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody id="tabelaHistorico" class="divide-y divide-slate-100 text-slate-700">
@@ -247,9 +332,45 @@
     </section>
   </main>
 
-  <!-- MODAL DE CONFIGURAÇÃO DO BANCO EM NUVEM (SUPABASE) -->
+  <!-- MODAL: GERENCIAMENTO DE COLABORADORES (CADASTRAR E REMOVER) -->
+  <div id="modalColaboradores" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="ph ph-users-three text-2xl text-amber-500"></i>
+          <h3 class="font-bold text-slate-800 text-base">Gerenciar Colaboradores</h3>
+        </div>
+        <button onclick="fecharModalColaboradores()" class="text-slate-400 hover:text-slate-600 p-1 text-xl"><i class="ph ph-x"></i></button>
+      </div>
+
+      <!-- Formulário de Adicionar -->
+      <form id="formNovoColaborador" onsubmit="adicionarColaborador(event)" class="flex gap-2">
+        <input type="text" id="inputNomeColaborador" placeholder="Nome do novo colaborador..." required
+          class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold px-4 rounded-xl flex items-center gap-1">
+          <i class="ph ph-plus font-bold"></i> Adicionar
+        </button>
+      </form>
+
+      <!-- Lista Atual -->
+      <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pt-2">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Equipe Atual</label>
+        <div id="listaGerenciarColaboradores" class="space-y-1.5">
+          <!-- Gerado via JS -->
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button onclick="fecharModalColaboradores()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition">
+          Concluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURAÇÃO DE NUVEM (SUPABASE) -->
   <div id="modalConfig" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100 animate-in fade-in zoom-in duration-200">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div class="flex items-center gap-2">
           <i class="ph ph-cloud-check text-2xl text-indigo-600"></i>
@@ -259,13 +380,13 @@
       </div>
 
       <p class="text-xs text-slate-500 leading-relaxed">
-        Insira as credenciais do seu projeto gratuito no <strong>Supabase</strong> para que todos os celulares e computadores compartilhem a mesma contagem em tempo real.
+        Suas credenciais do <strong>Supabase</strong> já vêm configuradas por padrão para manter a sincronização automática.
       </p>
 
       <div class="space-y-3">
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Project URL do Supabase</label>
-          <input type="text" id="supabaseUrl" placeholder="https://xyzcompany.supabase.co"
+          <label class="block text-xs font-bold text-slate-600 mb-1">Project URL</label>
+          <input type="text" id="supabaseUrl" placeholder="https://xyz.supabase.co"
             class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
         <div>
@@ -277,21 +398,27 @@
 
       <div class="flex flex-col gap-2 pt-2">
         <button onclick="salvarConfigNuvem()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition text-sm">
-          Salvar & Conectar Nuvem
+          Salvar & Reconectar
         </button>
-        <button onclick="desconectarNuvem()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl transition text-xs">
-          Usar Apenas Armazenamento Local (Offline)
+        <button onclick="restaurarPadraoNuvem()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl transition text-xs">
+          Restaurar Chaves Padrão
         </button>
       </div>
     </div>
   </div>
 
   <script>
-    const COLABORADORES = ["Lucas", "Vinicius", "Gustavo", "Nalysson"];
-    const STORAGE_KEY = 'producao_portas_db_v3';
+    // CREDENCIAIS PADRÃO DO SUPABASE
+    const DEFAULT_SUPABASE_URL = "https://wejiskawtjufxgfbtdrt.supabase.co";
+    const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indlamlza2F3dGp1ZnhnZmJ0ZHJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MzU2NDYsImV4cCI6MjEwMzUxMTY0Nn0.CEFJvKSt53Ve_-YYmzHbNmsRy6vuRl4Vc8CU_1-xTME";
+
+    const DEFAULT_COLABORADORES = ["Lucas", "Vinicius", "Gustavo", "Nalysson"];
+    const STORAGE_KEY = 'producao_portas_db_v4';
+    const COLAB_KEY = 'producao_portas_colaboradores_v4';
     const CONFIG_KEY = 'producao_portas_cloud_config';
 
     let supabaseClient = null;
+    let rankingTipoFiltro = 'dia'; // 'dia' ou 'mes'
 
     // Utilitários de Data / Hora
     const obterDataHojeFormatada = () => new Date().toISOString().split('T')[0];
@@ -312,23 +439,116 @@
       input.value = valor;
     }
 
-    function selecionarColaborador(nome) {
-      document.getElementById('colaborador').value = nome;
-      document.querySelectorAll('.btn-colab').forEach(btn => {
-        if (btn.innerText === nome) {
-          btn.classList.remove('bg-slate-50', 'text-slate-700', 'border-slate-200');
-          btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600', 'shadow-md');
-        } else {
-          btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600', 'shadow-md');
-          btn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
-        }
+    // GESTÃO DINÂMICA DE COLABORADORES
+    function obterColaboradores() {
+      const salvos = localStorage.getItem(COLAB_KEY);
+      if (salvos) {
+        try {
+          const lista = JSON.parse(salvos);
+          if (Array.isArray(lista) && lista.length > 0) return lista;
+        } catch(e) {}
+      }
+      return [...DEFAULT_COLABORADORES];
+    }
+
+    function salvarColaboradores(lista) {
+      localStorage.setItem(COLAB_KEY, JSON.stringify(lista));
+    }
+
+    function renderizarBotoesColaboradores() {
+      const lista = obterColaboradores();
+      const grid = document.getElementById('gridColaboradores');
+      grid.innerHTML = '';
+
+      const selecionado = document.getElementById('colaborador').value;
+
+      lista.forEach(nome => {
+        const isSel = nome === selecionado;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.onclick = () => selecionarColaborador(nome);
+        btn.className = `btn-colab p-3 text-sm font-semibold rounded-xl border text-center active:scale-95 transition truncate ${
+          isSel 
+            ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' 
+            : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+        }`;
+        btn.innerText = nome;
+        grid.appendChild(btn);
       });
     }
 
-    // NAVEGAÇÃO DE ABAS NO ANDROID / MOBILE
+    function selecionarColaborador(nome) {
+      document.getElementById('colaborador').value = nome;
+      renderizarBotoesColaboradores();
+    }
+
+    function abrirModalColaboradores() {
+      renderizarListaGerenciarColab();
+      document.getElementById('modalColaboradores').classList.remove('hidden');
+    }
+
+    function fecharModalColaboradores() {
+      document.getElementById('modalColaboradores').classList.add('hidden');
+      renderizarBotoesColaboradores();
+      renderizarTudo();
+    }
+
+    function renderizarListaGerenciarColab() {
+      const lista = obterColaboradores();
+      const container = document.getElementById('listaGerenciarColaboradores');
+      container.innerHTML = '';
+
+      lista.forEach(nome => {
+        const item = document.createElement('div');
+        item.className = 'flex justify-between items-center bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-sm font-semibold text-slate-700';
+        item.innerHTML = `
+          <span>${nome}</span>
+          <button onclick="removerColaborador('${nome}')" class="text-rose-500 hover:text-rose-700 p-1 text-base active:scale-90" title="Remover">
+            <i class="ph ph-trash"></i>
+          </button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function adicionarColaborador(e) {
+      e.preventDefault();
+      const input = document.getElementById('inputNomeColaborador');
+      const nome = input.value.trim();
+      if (!nome) return;
+
+      const lista = obterColaboradores();
+      if (lista.some(c => c.toLowerCase() === nome.toLowerCase())) {
+        alert('Este colaborador já está cadastrado.');
+        return;
+      }
+
+      lista.push(nome);
+      salvarColaboradores(lista);
+      input.value = '';
+      renderizarListaGerenciarColab();
+    }
+
+    function removerColaborador(nome) {
+      let lista = obterColaboradores();
+      if (lista.length <= 1) {
+        alert('É necessário manter pelo menos 1 colaborador cadastrado.');
+        return;
+      }
+      if (confirm(`Remover "${nome}" da lista de colaboradores ativos? (Os registros históricos não serão apagados)`)) {
+        lista = lista.filter(c => c !== nome);
+        salvarColaboradores(lista);
+        if (document.getElementById('colaborador').value === nome) {
+          document.getElementById('colaborador').value = '';
+        }
+        renderizarListaGerenciarColab();
+      }
+    }
+
+    // NAVEGAÇÃO POR ABAS NO MOBILE
     function alternarAba(aba) {
-      const secoes = ['secaoApontamento', 'secaoDia', 'secaoMes', 'secaoHistorico'];
-      const botoes = ['tabBtnApontamento', 'tabBtnDia', 'tabBtnMes', 'tabBtnHistorico'];
+      const secoes = ['secaoApontamento', 'secaoRanking', 'secaoFechamentos', 'secaoHistorico'];
+      const botoes = ['tabBtnApontamento', 'tabBtnRanking', 'tabBtnFechamentos', 'tabBtnHistorico'];
       
       secoes.forEach(id => {
         const el = document.getElementById(id);
@@ -348,12 +568,12 @@
       if (aba === 'apontamento') {
         document.getElementById('secaoApontamento').classList.remove('hidden');
         document.getElementById('tabBtnApontamento').classList.add('border-indigo-600', 'text-indigo-600');
-      } else if (aba === 'dia') {
-        document.getElementById('secaoDia').classList.remove('hidden');
-        document.getElementById('tabBtnDia').classList.add('border-indigo-600', 'text-indigo-600');
-      } else if (aba === 'mes') {
-        document.getElementById('secaoMes').classList.remove('hidden');
-        document.getElementById('tabBtnMes').classList.add('border-indigo-600', 'text-indigo-600');
+      } else if (aba === 'ranking') {
+        document.getElementById('secaoRanking').classList.remove('hidden');
+        document.getElementById('tabBtnRanking').classList.add('border-indigo-600', 'text-indigo-600');
+      } else if (aba === 'fechamentos') {
+        document.getElementById('secaoFechamentos').classList.remove('hidden');
+        document.getElementById('tabBtnFechamentos').classList.add('border-indigo-600', 'text-indigo-600');
       } else if (aba === 'historico') {
         document.getElementById('secaoHistorico').classList.remove('hidden');
         document.getElementById('tabBtnHistorico').classList.add('border-indigo-600', 'text-indigo-600');
@@ -362,23 +582,27 @@
 
     window.addEventListener('resize', () => {
       if (window.innerWidth >= 1024) {
-        document.querySelectorAll('#secaoApontamento, #secaoDia, #secaoMes, #secaoHistorico').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('#secaoApontamento, #secaoRanking, #secaoFechamentos, #secaoHistorico').forEach(el => el.classList.remove('hidden'));
       }
     });
 
-    // INICIALIZAÇÃO
+    // INICIALIZAÇÃO DA APLICAÇÃO
     document.addEventListener('DOMContentLoaded', () => {
       const hoje = obterDataHojeFormatada();
+      const mesAtual = obterMesAtualFormatado();
+
       document.getElementById('dataApontamento').value = hoje;
       document.getElementById('horaApontamento').value = obterHoraAtualFormatada();
       document.getElementById('filtroDataDiaria').value = hoje;
-      document.getElementById('filtroMesAno').value = obterMesAtualFormatado();
+      document.getElementById('filtroMesAno').value = mesAtual;
+      document.getElementById('filtroDataRanking').value = hoje;
+      document.getElementById('filtroMesRanking').value = mesAtual;
 
       configurarMascaraOP();
+      renderizarBotoesColaboradores();
       inicializarClienteNuvem();
       renderizarTudo();
 
-      // Ajusta visão mobile inicial
       if (window.innerWidth < 1024) {
         alternarAba('apontamento');
       }
@@ -407,13 +631,16 @@
     }
 
     function inicializarClienteNuvem() {
-      const config = JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null');
+      const config = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+      const url = config.url || DEFAULT_SUPABASE_URL;
+      const key = config.key || DEFAULT_SUPABASE_KEY;
+
       const dot = document.getElementById('cloudStatusDot');
       const text = document.getElementById('cloudStatusText');
 
-      if (config && config.url && config.key && window.supabase) {
+      if (url && key && window.supabase) {
         try {
-          supabaseClient = window.supabase.createClient(config.url, config.key);
+          supabaseClient = window.supabase.createClient(url, key);
           dot.className = "w-2 h-2 rounded-full bg-emerald-400";
           text.innerText = "Nuvem Conectada";
           sincronizar();
@@ -434,14 +661,12 @@
 
       if (supabaseClient) {
         try {
-          // Busca dados da nuvem
           const { data, error } = await supabaseClient
             .from('producao_portas')
             .select('*')
             .order('created_at', { ascending: false });
 
           if (!error && data) {
-            // Mescla nuvem com local
             const locais = obterRegistrosLocais();
             const mapGeral = new Map();
 
@@ -449,19 +674,18 @@
             locais.forEach(item => {
               if (!mapGeral.has(item.id)) {
                 mapGeral.set(item.id, item);
-                // Sobe o que só existia no local
                 supabaseClient.from('producao_portas').upsert(item).then();
               }
             });
 
             const unificados = Array.from(mapGeral.values()).sort((a,b) => {
-              return (b.data + b.hora).localeCompare(a.data + a.hora);
+              return (b.data + (b.hora||'')).localeCompare(a.data + (a.hora||''));
             });
 
             salvarRegistrosLocais(unificados);
           }
         } catch (err) {
-          console.warn("Falha de sincronização na nuvem:", err);
+          console.warn("Falha de sincronização:", err);
         }
       }
 
@@ -469,10 +693,11 @@
       setTimeout(() => syncIcon.classList.remove('animate-spin'), 600);
     }
 
-    // FORMULÁRIO DE ENVIO
+    // FORMULÁRIO DE CADASTRO E EDIÇÃO
     document.getElementById('formProducao').addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      const editandoId = document.getElementById('editandoId').value;
       const colaborador = document.getElementById('colaborador').value;
       const op = document.getElementById('op').value.trim();
       const quantidade = parseInt(document.getElementById('quantidade').value, 10);
@@ -481,53 +706,114 @@
       const fixarOP = document.getElementById('fixarOP').checked;
 
       if (!colaborador) {
-        alert('Por favor, toque no nome do colaborador que realizou a montagem.');
+        alert('Por favor, selecione quem montou a porta.');
         return;
       }
 
       if (op.length < 9) {
-        alert('Formato de OP inválido. Use 6 dígitos + 2 dígitos (Ex: 000123-01).');
+        alert('Formato de OP inválido. Use 6 dígitos + traço + 2 dígitos (Ex: 000123-01).');
         return;
       }
 
-      const novoRegistro = {
-        id: crypto.randomUUID ? crypto.randomUUID() : 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-        colaborador,
-        op,
-        quantidade,
-        data,
-        hora
-      };
+      let registros = obterRegistrosLocais();
 
-      // 1. Salva localmente primeiro (Resposta instantânea)
-      const registros = obterRegistrosLocais();
-      registros.unshift(novoRegistro);
-      salvarRegistrosLocais(registros);
+      if (editandoId) {
+        // MODO EDIÇÃO
+        const index = registros.findIndex(r => r.id === editandoId);
+        if (index !== -1) {
+          const registroAtualizado = {
+            ...registros[index],
+            colaborador,
+            op,
+            quantidade,
+            data,
+            hora
+          };
+          registros[index] = registroAtualizado;
+          salvarRegistrosLocais(registros);
 
-      // 2. Salva na nuvem se conectada
-      if (supabaseClient) {
-        supabaseClient.from('producao_portas').insert([novoRegistro]).then(({ error }) => {
-          if (error) console.error("Erro ao salvar na nuvem:", error);
-        });
-      }
-
-      // Reset inteligente
-      document.getElementById('quantidade').value = '';
-      document.getElementById('horaApontamento').value = obterHoraAtualFormatada();
-
-      if (!fixarOP) {
-        document.getElementById('op').value = '';
-        document.getElementById('op').focus();
+          if (supabaseClient) {
+            supabaseClient.from('producao_portas').upsert(registroAtualizado).then();
+          }
+        }
+        cancelarEdicao();
       } else {
-        document.getElementById('quantidade').focus();
+        // NOVO CADASTRO
+        const novoRegistro = {
+          id: crypto.randomUUID ? crypto.randomUUID() : 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+          colaborador,
+          op,
+          quantidade,
+          data,
+          hora
+        };
+
+        registros.unshift(novoRegistro);
+        salvarRegistrosLocais(registros);
+
+        if (supabaseClient) {
+          supabaseClient.from('producao_portas').insert([novoRegistro]).then();
+        }
+
+        // Reset
+        document.getElementById('quantidade').value = '';
+        document.getElementById('horaApontamento').value = obterHoraAtualFormatada();
+
+        if (!fixarOP) {
+          document.getElementById('op').value = '';
+          document.getElementById('op').focus();
+        } else {
+          document.getElementById('quantidade').focus();
+        }
       }
 
       renderizarTudo();
     });
 
+    // INICIAR EDIÇÃO
+    function prepararEdicao(id) {
+      const registros = obterRegistrosLocais();
+      const reg = registros.find(r => r.id === id);
+      if (!reg) return;
+
+      document.getElementById('editandoId').value = reg.id;
+      selecionarColaborador(reg.colaborador);
+      document.getElementById('op').value = reg.op;
+      document.getElementById('quantidade').value = reg.quantidade;
+      document.getElementById('dataApontamento').value = reg.data;
+      document.getElementById('horaApontamento').value = reg.hora || obterHoraAtualFormatada();
+
+      document.getElementById('bannerEdicao').classList.remove('hidden');
+      document.getElementById('btnCancelarEdicao').classList.remove('hidden');
+      document.getElementById('tituloFormulario').innerHTML = '<i class="ph ph-pencil-simple-line text-amber-500 text-xl"></i> Alterar Apontamento';
+      document.getElementById('btnSalvarTexto').innerText = 'Salvar Alterações';
+      document.getElementById('btnSalvar').className = 'w-full bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white font-bold py-3 rounded-xl shadow-lg shadow-amber-200 transition flex items-center justify-center gap-2 text-base';
+
+      if (window.innerWidth < 1024) {
+        alternarAba('apontamento');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicao() {
+      document.getElementById('editandoId').value = '';
+      document.getElementById('formProducao').reset();
+      document.getElementById('colaborador').value = '';
+      renderizarBotoesColaboradores();
+
+      document.getElementById('dataApontamento').value = obterDataHojeFormatada();
+      document.getElementById('horaApontamento').value = obterHoraAtualFormatada();
+
+      document.getElementById('bannerEdicao').classList.add('hidden');
+      document.getElementById('btnCancelarEdicao').classList.add('hidden');
+      document.getElementById('tituloFormulario').innerHTML = '<i class="ph ph-plus-circle text-indigo-600 text-xl"></i> Novo Apontamento';
+      document.getElementById('btnSalvarTexto').innerText = 'Registrar Produção';
+      document.getElementById('btnSalvar').className = 'w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2 text-base';
+    }
+
     // EXCLUSÃO
     async function excluirRegistro(id) {
-      if (confirm('Deseja realmente remover este lançamento?')) {
+      if (confirm('Deseja realmente remover este apontamento?')) {
         let registros = obterRegistrosLocais().filter(r => r.id !== id);
         salvarRegistrosLocais(registros);
 
@@ -535,57 +821,128 @@
           await supabaseClient.from('producao_portas').delete().eq('id', id);
         }
 
+        if (document.getElementById('editandoId').value === id) {
+          cancelarEdicao();
+        }
+
         renderizarTudo();
       }
     }
 
-    // MODAL DE CONFIGURAÇÃO NUVEM
-    function abrirModalConfig() {
-      const config = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
-      document.getElementById('supabaseUrl').value = config.url || '';
-      document.getElementById('supabaseKey').value = config.key || '';
-      document.getElementById('modalConfig').classList.remove('hidden');
-    }
+    // CONTROLE DE FILTRO DO RANKING (DIA vs MÊS)
+    function setTipoFiltroRanking(tipo) {
+      rankingTipoFiltro = tipo;
+      const btnDia = document.getElementById('btnRankFiltroDia');
+      const btnMes = document.getElementById('btnRankFiltroMes');
+      const inputDia = document.getElementById('filtroDataRanking');
+      const inputMes = document.getElementById('filtroMesRanking');
+      const labelPeriodo = document.getElementById('labelRankingPeriodo');
 
-    function fecharModalConfig() {
-      document.getElementById('modalConfig').classList.add('hidden');
-    }
-
-    function salvarConfigNuvem() {
-      const url = document.getElementById('supabaseUrl').value.trim();
-      const key = document.getElementById('supabaseKey').value.trim();
-
-      if (!url || !key) {
-        alert('Por favor, informe a URL e a Chave do Supabase.');
-        return;
+      if (tipo === 'dia') {
+        btnDia.className = 'px-3 py-1 text-xs font-bold rounded-lg transition bg-white text-indigo-700 shadow-sm';
+        btnMes.className = 'px-3 py-1 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900';
+        inputDia.classList.remove('hidden');
+        inputMes.classList.add('hidden');
+        labelPeriodo.innerText = 'Dia Selecionado:';
+      } else {
+        btnMes.className = 'px-3 py-1 text-xs font-bold rounded-lg transition bg-white text-indigo-700 shadow-sm';
+        btnDia.className = 'px-3 py-1 text-xs font-bold rounded-lg transition text-slate-600 hover:text-slate-900';
+        inputMes.classList.remove('hidden');
+        inputDia.classList.add('hidden');
+        labelPeriodo.innerText = 'Mês Selecionado:';
       }
 
-      localStorage.setItem(CONFIG_KEY, JSON.stringify({ url, key }));
-      fecharModalConfig();
-      inicializarClienteNuvem();
+      renderizarRanking();
     }
 
-    function desconectarNuvem() {
-      localStorage.removeItem(CONFIG_KEY);
-      supabaseClient = null;
-      fecharModalConfig();
-      inicializarClienteNuvem();
-    }
-
-    // FILTROS & EVENTOS
+    document.getElementById('filtroDataRanking').addEventListener('change', renderizarRanking);
+    document.getElementById('filtroMesRanking').addEventListener('change', renderizarRanking);
     document.getElementById('filtroDataDiaria').addEventListener('change', renderizarDiario);
     document.getElementById('filtroMesAno').addEventListener('change', renderizarMensal);
 
-    // RENDERIZAÇÃO
+    // RENDERIZAÇÃO GERAL
     function renderizarTudo() {
+      renderizarRanking();
       renderizarDiario();
       renderizarMensal();
       renderizarHistorico();
     }
 
+    // RENDERIZAÇÃO DO RANKING (QUEM MONTOU MAIS PORTAS)
+    function renderizarRanking() {
+      const registros = obterRegistrosLocais();
+      const colaboradores = obterColaboradores();
+      const container = document.getElementById('containerRankingBarras');
+      container.innerHTML = '';
+
+      let registrosFiltrados = [];
+      let textoPeriodo = '';
+
+      if (rankingTipoFiltro === 'dia') {
+        const dataVal = document.getElementById('filtroDataRanking').value;
+        registrosFiltrados = registros.filter(r => r.data === dataVal);
+        const p = dataVal.split('-');
+        textoPeriodo = p.length === 3 ? `Produção de ${p[2]}/${p[1]}/${p[0]}` : dataVal;
+      } else {
+        const mesVal = document.getElementById('filtroMesRanking').value;
+        registrosFiltrados = registros.filter(r => r.data && r.data.startsWith(mesVal));
+        const p = mesVal.split('-');
+        textoPeriodo = p.length === 2 ? `Acumulado do Mês ${p[1]}/${p[0]}` : mesVal;
+      }
+
+      document.getElementById('labelFiltroRanking').innerText = textoPeriodo;
+
+      // Agrupar totais por colaborador
+      const totaisPorColab = colaboradores.map(nome => {
+        const total = registrosFiltrados
+          .filter(r => r.colaborador === nome)
+          .reduce((sum, item) => sum + (item.quantidade || 0), 0);
+        return { nome, total };
+      });
+
+      totaisPorColab.sort((a, b) => b.total - a.total);
+
+      const maxProducao = Math.max(...totaisPorColab.map(c => c.total), 1);
+      const totalGeralPeriodo = totaisPorColab.reduce((acc, curr) => acc + curr.total, 0);
+
+      const medalhas = ['🥇', '🥈', '🥉', '👏'];
+      const coresBarras = ['bg-indigo-600', 'bg-sky-500', 'bg-emerald-500', 'bg-slate-400'];
+
+      totaisPorColab.forEach((item, index) => {
+        const porcentagem = maxProducao > 0 ? (item.total / maxProducao) * 100 : 0;
+        const participacaoTotal = totalGeralPeriodo > 0 ? Math.round((item.total / totalGeralPeriodo) * 100) : 0;
+        const medalha = medalhas[index] || `#${index + 1}`;
+        const cor = coresBarras[index] || 'bg-slate-400';
+
+        const row = document.createElement('div');
+        row.className = 'bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 space-y-2';
+        row.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">${medalha}</span>
+              <div>
+                <span class="font-bold text-slate-800 text-sm block leading-tight">${item.nome}</span>
+                <span class="text-[11px] text-slate-400">${participacaoTotal}% do total produzido</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-lg font-black text-slate-800 font-mono">${item.total}</span>
+              <span class="text-xs text-slate-500"> portas</span>
+            </div>
+          </div>
+          <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+            <div class="${cor} h-full rounded-full transition-all duration-500" style="width: ${porcentagem}%"></div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // RENDERIZAÇÃO FECHAMENTO DIÁRIO
     function renderizarDiario() {
       const dataFiltro = document.getElementById('filtroDataDiaria').value;
       const registros = obterRegistrosLocais();
+      const colaboradores = obterColaboradores();
 
       const partes = dataFiltro.split('-');
       if (partes.length === 3) {
@@ -598,7 +955,7 @@
       const container = document.getElementById('cardsColaboradoresDia');
       container.innerHTML = '';
 
-      COLABORADORES.forEach(nome => {
+      colaboradores.forEach(nome => {
         const totalPessoa = registrosDia
           .filter(r => r.colaborador === nome)
           .reduce((acc, curr) => acc + curr.quantidade, 0);
@@ -617,9 +974,11 @@
       document.getElementById('totalPortasDia').innerText = `${totalGeralDia} portas`;
     }
 
+    // RENDERIZAÇÃO BALANÇO MENSAL
     function renderizarMensal() {
       const mesAnoFiltro = document.getElementById('filtroMesAno').value;
       const registros = obterRegistrosLocais();
+      const colaboradores = obterColaboradores();
 
       const registrosMes = registros.filter(r => r.data && r.data.startsWith(mesAnoFiltro));
       let totalGeralMes = 0;
@@ -627,7 +986,7 @@
       const container = document.getElementById('cardsMensal');
       container.innerHTML = '';
 
-      COLABORADORES.forEach(nome => {
+      colaboradores.forEach(nome => {
         const totalPessoa = registrosMes
           .filter(r => r.colaborador === nome)
           .reduce((acc, curr) => acc + curr.quantidade, 0);
@@ -649,6 +1008,7 @@
       document.getElementById('totalPortasMes').innerText = `${totalGeralMes} portas`;
     }
 
+    // RENDERIZAÇÃO HISTÓRICO COM BOTÃO EDITAR
     function renderizarHistorico() {
       const registros = obterRegistrosLocais();
       const tbody = document.getElementById('tabelaHistorico');
@@ -659,17 +1019,17 @@
       if (registros.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" class="py-6 text-center text-slate-400 text-xs italic">
-              Nenhum registro encontrado.
+            <td colspan="5" class="py-8 text-center text-slate-400 text-xs italic">
+              Nenhum apontamento registrado até o momento.
             </td>
           </tr>
         `;
         return;
       }
 
-      registros.slice(0, 30).forEach(reg => {
-        const partesData = reg.data.split('-');
-        const dataFormatada = `${partesData[2]}/${partesData[1]}`;
+      registros.slice(0, 50).forEach(reg => {
+        const partesData = reg.data ? reg.data.split('-') : ['--', '--', '--'];
+        const dataFormatada = partesData.length === 3 ? `${partesData[2]}/${partesData[1]}` : reg.data;
         const horaFormatada = reg.hora || '--:--';
 
         const tr = document.createElement('tr');
@@ -683,16 +1043,114 @@
           <td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono text-xs font-semibold">${reg.op}</span></td>
           <td class="py-2.5 px-3 text-right font-black text-indigo-600 text-sm">${reg.quantidade}</td>
           <td class="py-2.5 px-3 text-center">
-            <button onclick="excluirRegistro('${reg.id}')" class="text-slate-400 hover:text-rose-600 active:scale-90 transition p-1">
-              <i class="ph ph-trash text-base"></i>
-            </button>
+            <div class="flex items-center justify-center gap-1">
+              <!-- Botão Editar -->
+              <button onclick="prepararEdicao('${reg.id}')" class="text-slate-400 hover:text-amber-600 active:scale-90 transition p-1" title="Editar este cadastro">
+                <i class="ph ph-pencil-simple-line text-base"></i>
+              </button>
+              <!-- Botão Excluir -->
+              <button onclick="excluirRegistro('${reg.id}')" class="text-slate-400 hover:text-rose-600 active:scale-90 transition p-1" title="Excluir">
+                <i class="ph ph-trash text-base"></i>
+              </button>
+            </div>
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    // EXPORTAÇÕES
+    // EXPORTAÇÃO JSON
+    function exportarJSON() {
+      const registros = obterRegistrosLocais();
+      const colaboradores = obterColaboradores();
+
+      if (registros.length === 0 && colaboradores.length === 0) {
+        alert('Não há dados cadastrados para exportar.');
+        return;
+      }
+
+      const backupData = {
+        versao: "2.0",
+        dataBackup: new Date().toISOString(),
+        colaboradores,
+        dados: registros
+      };
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `backup_portas_${obterDataHojeFormatada()}.json`;
+      link.click();
+    }
+
+    // IMPORTAÇÃO JSON
+    function importarJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const conteudo = JSON.parse(e.target.result);
+          let novosRegistros = [];
+          let novosColaboradores = null;
+
+          if (Array.isArray(conteudo)) {
+            novosRegistros = conteudo;
+          } else if (conteudo && Array.isArray(conteudo.dados)) {
+            novosRegistros = conteudo.dados;
+            if (Array.isArray(conteudo.colaboradores)) {
+              novosColaboradores = conteudo.colaboradores;
+            }
+          } else {
+            throw new Error('Arquivo JSON incompatível.');
+          }
+
+          const registrosValidos = novosRegistros.filter(r => r.colaborador && r.op && r.quantidade && r.data);
+
+          if (registrosValidos.length === 0) {
+            alert('Nenhum registro válido de apontamento foi encontrado no arquivo.');
+            return;
+          }
+
+          const opcao = confirm(
+            `Arquivo validado com ${registrosValidos.length} apontamentos!\n\n` +
+            `Clique em "OK" para SUBSTITUIR todos os dados existentes.\n` +
+            `Clique em "Cancelar" para MESCLAR com os registros atuais.`
+          );
+
+          if (opcao) {
+            salvarRegistrosLocais(registrosValidos);
+            if (novosColaboradores) salvarColaboradores(novosColaboradores);
+          } else {
+            const atuais = obterRegistrosLocais();
+            const mapIds = new Set(atuais.map(r => r.id));
+            const semDuplicar = registrosValidos.filter(r => !mapIds.has(r.id));
+            salvarRegistrosLocais([...semDuplicar, ...atuais]);
+
+            if (novosColaboradores) {
+              const colabAtuais = new Set(obterColaboradores());
+              novosColaboradores.forEach(c => colabAtuais.add(c));
+              salvarColaboradores(Array.from(colabAtuais));
+            }
+          }
+
+          renderizarBotoesColaboradores();
+          renderizarTudo();
+          alert('Backup importado com sucesso!');
+        } catch (erro) {
+          alert('Falha ao processar o arquivo JSON. Certifique-se de que é um backup válido.');
+          console.error(erro);
+        } finally {
+          event.target.value = '';
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
+    // EXPORTAÇÃO CSV
     function exportarCSV() {
       const registros = obterRegistrosLocais();
       if (registros.length === 0) return alert('Sem dados para exportar.');
@@ -710,16 +1168,36 @@
       link.click();
     }
 
-    function exportarJSON() {
-      const registros = obterRegistrosLocais();
-      if (registros.length === 0) return alert('Sem dados para backup.');
+    // MODAL DE NUVEM
+    function abrirModalConfig() {
+      const config = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+      document.getElementById('supabaseUrl').value = config.url || DEFAULT_SUPABASE_URL;
+      document.getElementById('supabaseKey').value = config.key || DEFAULT_SUPABASE_KEY;
+      document.getElementById('modalConfig').classList.remove('hidden');
+    }
 
-      const blob = new Blob([JSON.stringify({ dataBackup: new Date().toISOString(), dados: registros }, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `backup_portas_${obterDataHojeFormatada()}.json`;
-      link.click();
+    function fecharModalConfig() {
+      document.getElementById('modalConfig').classList.add('hidden');
+    }
+
+    function salvarConfigNuvem() {
+      const url = document.getElementById('supabaseUrl').value.trim();
+      const key = document.getElementById('supabaseKey').value.trim();
+
+      if (!url || !key) return alert('Preencha os campos da nuvem.');
+
+      localStorage.setItem(CONFIG_KEY, JSON.stringify({ url, key }));
+      fecharModalConfig();
+      inicializarClienteNuvem();
+    }
+
+    function restaurarPadraoNuvem() {
+      localStorage.removeItem(CONFIG_KEY);
+      document.getElementById('supabaseUrl').value = DEFAULT_SUPABASE_URL;
+      document.getElementById('supabaseKey').value = DEFAULT_SUPABASE_KEY;
+      fecharModalConfig();
+      inicializarClienteNuvem();
+      alert('Credenciais padrão restauradas e reconectadas!');
     }
   </script>
 </body>
